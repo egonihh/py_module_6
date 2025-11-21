@@ -12,6 +12,7 @@
             display: flex;
             justify-content: center;
             padding: 40px;
+            margin: 0;
         }
 
         .container {
@@ -96,13 +97,13 @@
             <option value="smart">Smart Estimate (based on message)</option>
         </select>
 
-        <!-- Daily usage input -->
+        <!-- Daily usage -->
         <div id="dailyBox" style="display:none;">
             <label>Your Daily Data Usage (MB)</label>
             <input id="dailyInput" type="number" placeholder="e.g., 500">
         </div>
 
-        <!-- Smart message input -->
+        <!-- Smart estimate -->
         <div id="smartBox" style="display:none;">
             <label>Type a sample message</label>
             <textarea id="messageInput" placeholder="Write anything..."></textarea>
@@ -154,7 +155,7 @@
                     return;
                 }
 
-                // Simple message-length → MB estimate
+                // Simple heuristic: 1 char ≈ 0.6 MB (example approximation)
                 estimatedMB = Math.round(msg.length * 0.6);
             }
 
@@ -163,6 +164,19 @@
                 <b>${name}</b>, your estimated daily data usage is:<br>
                 <h3>${estimatedMB} MB/day</h3>
             `;
+
+            // Send to Flask backend
+            fetch("/estimate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name,
+                    daily_usage: estimatedMB
+                })
+            })
+            .then(res => res.json())
+            .then(data => console.log(data))
+            .catch(err => console.error(err));
         }
 
         function clearForm() {
