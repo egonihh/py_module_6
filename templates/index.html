@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Plan Estimator</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fa;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        .container {
+            width: 420px;
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        label {
+            font-size: 14px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 14px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        textarea {
+            height: 80px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        button {
+            width: 100%;
+            border: none;
+            padding: 12px;
+            font-size: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .estimate-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .clear-btn {
+            background: #e0e0e0;
+        }
+
+        .result {
+            margin-top: 20px;
+            background: #f0f3f7;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 15px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Mobile Data Plan Estimator</h2>
+
+        <label>Your Name</label>
+        <input id="nameInput" type="text" placeholder="Enter your name">
+
+        <label>Choose Estimation Type</label>
+        <select id="modeSelect">
+            <option value="none">-- choose an option --</option>
+            <option value="daily">Daily Usage (manual)</option>
+            <option value="smart">Smart Estimate (based on message)</option>
+        </select>
+
+        <!-- Daily usage -->
+        <div id="dailyBox" style="display:none;">
+            <label>Your Daily Data Usage (MB)</label>
+            <input id="dailyInput" type="number" placeholder="e.g., 500">
+        </div>
+
+        <!-- Smart estimate -->
+        <div id="smartBox" style="display:none;">
+            <label>Type a sample message</label>
+            <textarea id="messageInput" placeholder="Write anything..."></textarea>
+        </div>
+
+        <div class="buttons">
+            <button class="estimate-btn" onclick="estimate()">Estimate</button>
+            <button class="clear-btn" onclick="clearForm()">Clear</button>
+            <button class="clear-btn" onclick="showPlans()" title="Show available plans">Show Plans</button>
+        </div>
+
+        <div class="result" id="resultBox"></div>
+        <div class="result" id="plansBox" style="display:none;"></div>
+    </div>
+
+    <script>
+        const modeSelect = document.getElementById("modeSelect");
+        const dailyBox = document.getElementById("dailyBox");
+        const smartBox = document.getElementById("smartBox");
+
+        modeSelect.addEventListener("change", () => {
+            dailyBox.style.display = modeSelect.value === "daily" ? "block" : "none";
+            smartBox.style.display = modeSelect.value === "smart" ? "block" : "none";
+        });
+
+        function estimate() {
+            const name = document.getElementById("nameInput").value.trim();
+            const mode = document.getElementById("modeSelect").value;
+            const resultBox = document.getElementById("resultBox");
+
+            if (!name) {
+                alert("Please enter your name.");
+                return;
+            }
+
+            let estimatedMB = 0;
+
+            if (mode === "daily") {
+                const value = Number(document.getElementById("dailyInput").value);
+                if (isNaN(value) || value <= 0) {
+                    alert("Please enter a valid daily usage value.");
+                    return;
+                }
+                estimatedMB = value;
+            }
+
+            if (mode === "smart") {
+                const msg = document.getElementById("messageInput").value.trim();
+                if (msg.length === 0) {
+                    alert("Please type a sample message.");
+                    return;
+                }
+
+                // Simple message-length → MB estimate
+                estimatedMB = Math.round(msg.length * 6);
+            }
+
+            resultBox.style.display = "block";
+            resultBox.innerHTML = `<b>${name}</b>, your estimated daily data usage is:<br>
+                <h3>${estimatedMB} MB/day</h3>
+                <p>Calculating recommended plan...</p>`;
+
+            // Send to Flask backend to get monthly GB estimate and recommended plan
+            fetch("/estimate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name,
+                    daily_usage: estimatedMB
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.monthly_gb != null) {
+                    const monthly = data.monthly_gb;
+                    const plan = data.recommended_plan || 'N/A';
+                    resultBox.innerHTML = `
+                        <b>${name}</b>, your estimated daily data usage is:<br>
+                        <h3>${estimatedMB} MB/day</h3>
+                        <p>Estimated monthly usage: <strong>${monthly} GB</strong></p>
+                        <p>Recommended plan: <strong>${plan}</strong></p>
+                    `;
+                } else {
+                    resultBox.innerHTML = `<b>${name}</b>, your estimated daily data usage is:<br>
+                        <h3>${estimatedMB} MB/day</h3>
+                        <p><em>Could not determine monthly estimate or plan.</em></p>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                resultBox.innerHTML = `<b>${name}</b>, your estimated daily data usage is:<br>
+                    <h3>${estimatedMB} MB/day</h3>
+                    <p><em>Error fetching recommended plan.</em></p>`;
+            });
+        }
+
+        function clearForm() {
+            document.getElementById("nameInput").value = "";
+            document.getElementById("dailyInput").value = "";
+            document.getElementById("messageInput").value = "";
+            document.getElementById("modeSelect").value = "none";
+            document.getElementById("resultBox").style.display = "none";
+            dailyBox.style.display = "none";
+            smartBox.style.display = "none";
+            document.getElementById("plansBox").style.display = "none";
+        }
+
+        function showPlans() {
+            const plansBox = document.getElementById('plansBox');
+            fetch('/packages')
+                .then(res => res.json())
+                .then(data => {
+                    const plans = data.plans || [];
+                    if (!plans.length) {
+                        plansBox.style.display = 'block';
+                        plansBox.innerHTML = '<b>No plans available.</b>';
+                        return;
+                    }
+                    let html = '<h3>Available Plans</h3><ul>';
+                    for (const p of plans) {
+                        html += `<li>${p.replace(/\n/g, '<br>')}</li>`;
+                    }
+                    html += '</ul>';
+                    plansBox.style.display = 'block';
+                    plansBox.innerHTML = html;
+                })
+                .catch(err => {
+                    plansBox.style.display = 'block';
+                    plansBox.innerHTML = '<b>Error fetching plans.</b>';
+                    console.error(err);
+                });
+        }
+    </script>
+
+</body>
+</html>
