@@ -1,9 +1,0 @@
-def recommend_plan(usage):
-    if usage <= 8:
-        return "Flexible Add-On Plan"
-    elif usage <= 18:
-        return "Dynamic Flexible Plan"
-    elif usage <= 30:
-        return "Flat 30GB Plan"
-    else:
-        return "Unlimited Plan"

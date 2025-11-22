@@ -155,8 +155,8 @@
                     return;
                 }
 
-                // Simple heuristic: 1 char ≈ 0.6 MB (example approximation)
-                estimatedMB = Math.round(msg.length * 0.6);
+                // Simple message-length → MB estimate
+                estimatedMB = Math.round(msg.length * 6);
             }
 
             resultBox.style.display = "block";
