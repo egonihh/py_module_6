@@ -7,9 +7,9 @@ def estimate_monthly_usage(daily_usage):
     
 
 def recommend_plan(usage):
-    if usage <= 8:
+    if usage <= 12:
         return "Flexible Add-On Plan"
-    elif usage <= 18:
+    elif usage <= 25:
         return "Dynamic Flexible Plan"
     elif usage <= 30:
         return "Flat 30GB Plan"
