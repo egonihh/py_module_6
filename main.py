@@ -1,4 +1,6 @@
-import csv 
+import csv
+import os
+import sys
 from plan_recommender import estimate_monthly_usage, recommend_plan, display_all_plans
 
 def load_people_from_csv(filename):
@@ -27,10 +29,7 @@ def add_person_to_csv (filename, name, daily_usage_mb):
         writer.writerow([name, f"{daily_usage_mb} MB"])
 
 
-people = load_people_from_csv('people_usage.csv')
-recommendations = recommend_plans_for_people(people)
-
-
+CSV_FILE = 'people_usage.csv'
 
 while True:
     print("Welcome to the Data Plan Recommender!\n-------------------------------")
@@ -42,7 +41,13 @@ while True:
         print(f"{name} has been added with a daily usage of {daily_usage_mb} MB.")
         
     elif select == '2':
+        if not os.path.exists(CSV_FILE):
+            print(f"Error: required file '{CSV_FILE}' not found. Please create the file or run the web UI to add entries.")
+            sys.exit(1)
+        people = load_people_from_csv(CSV_FILE)
+        recommendations = recommend_plans_for_people(people)
         number = 1
+
         print("\nPlan Recommendations:")
         for name, estimated_usage, plan in recommendations:
             print(f"{number}) {name}: Estimated Monthly Usage: {estimated_usage} GB - Recommended Plan: {plan}")
