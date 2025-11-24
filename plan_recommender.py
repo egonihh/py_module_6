@@ -35,6 +35,6 @@ def get_all_plans():
         "Flexible Add-On Plan: 10GB - €8/month after base plan every 5GB costs €3",
         "Dynamic Flexible Plan: The cost per GB decreases as usage increases:\n0–10GB: €1.2/GB\n10–20GB: €1/GB\n20–30GB: €0.7/GB",
         "Flat 30GB Plan: 30 GB - €30/month",
-        "Unlimited Plan: - €50/month"
+        "Unlimited Plan: - €40/month"
     ]
     

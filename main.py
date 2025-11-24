@@ -38,7 +38,8 @@ while True:
         name = input("Enter the person's name: ")
         daily_usage_mb = int(input("Enter their average daily data usage in MB: "))
         add_person_to_csv('people_usage.csv', name, daily_usage_mb)
-        print(f"{name} has been added with a daily usage of {daily_usage_mb} MB.")
+        recommended_plan = recommend_plan(estimate_monthly_usage(daily_usage_mb))
+        print(f"{name} has been added with a daily usage of {daily_usage_mb} MB.\nRecommended Plan: {recommended_plan}")
         
     elif select == '2':
         if not os.path.exists(CSV_FILE):
