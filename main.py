@@ -38,7 +38,8 @@ while True:
         name = input("Enter the person's name: ")
         daily_usage_mb = int(input("Enter their average daily data usage in MB: "))
         add_person_to_csv('people_usage.csv', name, daily_usage_mb)
-        print(f"{name} has been added with a daily usage of {daily_usage_mb} MB.")
+        recommended_plan = recommend_plan(estimate_monthly_usage(daily_usage_mb))
+        print(f"{name} has been added with a daily usage of {daily_usage_mb} MB.\nRecommended Plan: {recommended_plan}")
         
     elif select == '2':
         if not os.path.exists(CSV_FILE):
@@ -46,15 +47,32 @@ while True:
             sys.exit(1)
         people = load_people_from_csv(CSV_FILE)
         recommendations = recommend_plans_for_people(people)
-        number = 1
 
-        print("\nPlan Recommendations:")
-        for name, estimated_usage, plan in recommendations:
-            print(f"{number}) {name}: Estimated Monthly Usage: {estimated_usage} GB - Recommended Plan: {plan}")
-            number += 1
+        if not recommendations:
+            print("\nNo people found in the CSV.")
+        else:
+            number = 1
+            counts = {}
+
+            print("\nPlan Recommendations:")
+            for name, estimated_usage, plan in recommendations:
+                print(f"{number}) {name}: Estimated Monthly Usage: {estimated_usage} GB - Recommended Plan: {plan}")
+                number += 1
+                counts[plan] = counts.get(plan, 0) + 1
+
+            
+            total = len(recommendations)
+            if total > 0:
+                print("\nRecommendation distribution:")
+                for plan, count in sorted(counts.items(), key=lambda x: -x[1]):
+                    percent = (count / total) * 100
+                    print(f"- {plan}: {count} user(s) ({percent:.1f}%)")
             
     elif select == '3':
         display_all_plans()
+    else:
+        print("Invalid selection. Please enter 1, 2, or 3.")
+    
     input("Press Enter to continue...")
 
 
